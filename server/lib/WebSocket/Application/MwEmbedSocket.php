@@ -16,13 +16,13 @@ class MwEmbedSocket extends Application
 	private $_serverInfo = array();
 	private $_serverClientCount = 0;
 
-	private $_uuidSubscribers = array();
+	private $_guidSubscribers = array();
 
 	public function onConnect($client)
 	{
 		$id = $client->getClientId();
 		$this->_clients[$id] = $client;
-		$this->_sendServerinfo($client);
+		//$this->_sendServerinfo($client);
 	}
 
 	public function onDisconnect($client)
@@ -35,21 +35,22 @@ class MwEmbedSocket extends Application
 	{
 		$decodedData = $this->_decodeData( $data );
 		if( $decodedData === false ){
+			$client->log('Error: Could not decode data: ' . $data );
 			// @todo: invalid request trigger error...
 			return false;
 		}
-		switch( $dataObject['action'] ){
+		switch( $decodedData['action'] ){
 			case 'subscribe':
-				if( isset( $dataObject['uuid'] ) ){
-					$this->subscribeClientToUuid(  $client->getClientId(), $dataObject['uuid'] );
+				if( isset( $decodedData['guid'] ) ){
+					$this->subscribeClientToguid(  $client, $decodedData['guid'] );
 				}
 			break;
 			case 'log':
-				if( isset( $dataObject['uuid'],  $dataObject['message'] ) ){
-					$this->sendMessageToUuids(
-						$dataObject['uuid'], 
-						$dataObject['message'],
-						 $client->getClientId()
+				if( isset( $decodedData['guid'],  $decodedData['message'] ) ){
+					$this->sendMessageToguids(
+						$decodedData['guid'], 
+						$decodedData['message'],
+						$client->getClientId()
 					);
 				}
 				break;
@@ -114,20 +115,25 @@ class MwEmbedSocket extends Application
 		$this->_sendAll($encodedData);
 	}
 	
-	private function sendMessageToUuids( $uuid, $message, $excludeClientId ){
-		foreach( $this->_uuidSubscribers[ $uuid ] as $clientId => $currentClient ){
+	private function sendMessageToguids( $guid, $message, $excludeClientId ){
+		if( !isset( $this->_guidSubscribers[ $guid ] ) ){
+			// a log request without a subscriber
+			return false;
+		}
+		foreach( $this->_guidSubscribers[ $guid ] as $clientId => $currentClient ){
 			if( $currentClient->getClientId() != $excludeClientId ){
 				$encodedData = $this->_encodeData('message', $message);
 				$currentClient->send( $encodedData );
 			}
 		}
 	}
-	private function subscribeClientToUuid( $clientId, $uuid)
+	private function subscribeClientToguid( $client, $guid)
 	{
-		if( !$this->_uuidSubscribers[ $uuid ] ){
-			$this->_uuidSubscribers[ $uuid ] = array();
+		if( !isset( $this->_guidSubscribers[ $guid ] ) ){
+			$this->_guidSubscribers[ $guid ] = array();
 		}
-		$this->_uuidSubscribers[ $uuid ][$clientId ] = $client;
+		print "Subscribe:{$client->getClientId()} to {$guid}";
+		$this->_guidSubscribers[ $guid ][$client->getClientId() ] = $client;
 	}
 	
 	
