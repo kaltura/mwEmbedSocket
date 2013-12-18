@@ -20,6 +20,7 @@ $server->setMaxClients(100);
 $server->setCheckOrigin(true);
 $server->setAllowedOrigin('foo.lh');
 $server->setAllowedOrigin('http://localhost');
+$server->setAllowedOrigin('http://kgit.html5video.org');
 $server->setMaxConnectionsPerIp(100);
 $server->setMaxRequestsPerMinute(2000);
 
