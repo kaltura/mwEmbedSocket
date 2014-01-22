@@ -1,0 +1,46 @@
+<html>
+<head>
+	<script src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
+	<script src="/socket.io/socket.io.js"></script>
+	<script>
+	$(document).ready(function(){
+		var socket = io.connect('http://localhost:8080');
+		
+		// set guid and update socket guid mapping: 
+		$('#guid').change(function(){
+			debugger;
+			socket.emit( 'set-guid', {'guid': $(this).val() });
+		}).val( guid() ).change();
+		
+		socket.on('log', function (data) {
+			console.log(data);
+			$('#textlog').append( data['message'] + "\n")
+		});
+		$('#sampleLog').click(function(){
+			socket.emit('log', {
+				'message' : $('#sampleText').val(),
+				'guid' : $('#guid').val()
+			});
+		});
+	});
+	</script>
+	<script>
+	// http://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid-in-javascript
+	function s4() {
+		return Math.floor((1 + Math.random()) * 0x10000)
+			.toString(16)
+			.substring(1);
+	};
+	function guid() {
+		return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
+			s4() + '-' + s4() + s4() + s4();
+	}
+</script>
+</head>
+<body>
+	<h3>Sample logger</h3>
+	<pre id="textlog" style="width:600px;height:400px;border:solid thin black"></pre>
+	<button id="sampleLog" >Send Log</button> <input id="sampleText" style="width:100px;" value="sample msg"></input>
+	<br>guid: <input id="guid" type="text" value="" style="width:300px;">
+</body>
+</html>

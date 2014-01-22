@@ -9,3 +9,4 @@ Enables real time player communication services.
 ## Running
 ========
 npm install socket.io
+npm install -g express
